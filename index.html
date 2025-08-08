@@ -1,726 +1,1877 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Humedal Santa María del Lago - Experiencia 3D Interactiva</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      overflow: hidden;
-      background: linear-gradient(180deg, #87CEEB 0%, #98D8E8 50%, #B0E0E6 100%);
-    }
-    
-    #canvas-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-    }
-    
-    .loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      transition: opacity 0.5s ease;
-    }
-    
-    .loading-screen h1 {
-      color: white;
-      font-size: 2.5rem;
-      margin-bottom: 20px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    
-    .loader {
-      width: 60px;
-      height: 60px;
-      border: 5px solid rgba(255,255,255,0.3);
-      border-top: 5px solid white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    .ui-panel {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-      z-index: 100;
-    }
-    
-    .control-panel {
-      top: 20px;
-      left: 20px;
-      width: 320px;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Humedal Santa María del Lago - Experiencia 3D Inmersiva</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    background: linear-gradient(to bottom, #87CEEB, #98D8C8);
+    overflow: hidden;
+    position: relative;
+  }
+  
+  #canvas-container {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+  }
+  
+  /* UI Principal */
+  .ui-container {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 380px;
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 
+      0 8px 32px rgba(31, 38, 135, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 12px 40px rgba(31, 38, 135, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  
+  /* Panel de información */
+  .info-panel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    width: 320px;
+  }
+  
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 15px;
+  }
+  
+  .stat-item {
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+  
+  /* Botones mejorados */
+  .button-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  
+  .btn {
+    border: none;
+    padding: 12px;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+  
+  .btn:active::before {
+    width: 300px;
+    height: 300px;
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  }
+  
+  .btn-secondary {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    color: white;
+  }
+  
+  .btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(240, 147, 251, 0.4);
+  }
+  
+  .btn-success {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+  }
+  
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(17, 153, 142, 0.4);
+  }
+  
+  /* Badge superior */
+  .top-badge {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    z-index: 100;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-5px); }
+  }
+  
+  /* Panel de especies */
+  .species-panel {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    z-index: 100;
+    transform: translateY(calc(100% + 40px));
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .species-panel.active {
+    transform: translateY(0);
+  }
+  
+  .species-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+  }
+  
+  .species-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .species-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+  }
+  
+  .species-icon {
+    font-size: 24px;
+    margin-bottom: 5px;
+  }
+  
+  .species-name {
+    font-size: 11px;
+    color: #1e293b;
+    font-weight: 600;
+  }
+  
+  /* Controles de tiempo */
+  .time-control {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    margin-top: 10px;
+  }
+  
+  .time-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right, 
+      #fbbf24 0%, 
+      #60a5fa 25%, 
+      #1e3a8a 50%, 
+      #1e293b 75%, 
+      #fbbf24 100%);
+    outline: none;
+  }
+  
+  .time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Loading screen */
+  .loading {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.5s;
+  }
+  
+  .loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  .loader {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .ui-container, .info-panel {
+      width: calc(100% - 20px);
+      max-width: none;
+      left: 10px;
+      right: 10px;
     }
     
     .info-panel {
-      bottom: 20px;
-      left: 20px;
-      max-width: 400px;
+      top: auto;
+      bottom: 100px;
     }
     
-    .stats-panel {
-      top: 20px;
-      right: 20px;
-      width: 280px;
+    .button-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
     
-    .ui-panel h2 {
-      color: #2c3e50;
-      margin-bottom: 15px;
-      font-size: 1.4rem;
-      border-bottom: 2px solid #3498db;
-      padding-bottom: 10px;
+    .species-panel {
+      bottom: 10px;
     }
-    
-    .ui-panel h3 {
-      color: #34495e;
-      margin: 15px 0 10px 0;
-      font-size: 1.1rem;
-    }
-    
-    .button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      margin: 8px 0;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-      font-size: 1rem;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    
-    .button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-    
-    .button:active {
-      transform: translateY(0);
-    }
-    
-    .button.active {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    }
-    
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin: 10px 0;
-    }
-    
-    .button-group .button {
-      flex: 1;
-    }
-    
-    .stat-item {
-      background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 10px;
-      border-left: 4px solid #00acc1;
-    }
-    
-    .stat-label {
-      color: #546e7a;
-      font-size: 0.9rem;
-      margin-bottom: 5px;
-    }
-    
-    .stat-value {
-      color: #00838f;
-      font-size: 1.8rem;
-      font-weight: bold;
-    }
-    
-    .species-counter {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 25px;
-      font-weight: bold;
-      font-size: 1.1rem;
-      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-      z-index: 100;
-    }
-    
-    .help-text {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 15px;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      z-index: 100;
-    }
-    
-    .help-text kbd {
-      background: rgba(255, 255, 255, 0.2);
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: monospace;
-    }
-    
-    @media (max-width: 768px) {
-      .ui-panel {
-        width: calc(100% - 40px) !important;
-        max-width: none;
-      }
-      
-      .control-panel {
-        top: auto;
-        bottom: 20px;
-      }
-      
-      .stats-panel {
-        display: none;
-      }
-      
-      .help-text {
-        display: none;
-      }
-    }
-  </style>
+  }
+  
+  /* Tooltips */
+  .tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  .tooltip.visible {
+    opacity: 1;
+  }
+</style>
 </head>
 <body>
-  <div id="canvas-container"></div>
-  
-  <div class="loading-screen" id="loadingScreen">
-    <h1>🌿 Humedal Santa María del Lago</h1>
-    <div class="loader"></div>
-  </div>
-  
-  <div class="species-counter" id="speciesCounter">
-    🦆 Especies detectadas: <span id="speciesCount">0</span>
-  </div>
-  
-  <div class="ui-panel control-panel">
-    <h2>🎮 Controles de Visualización</h2>
-    
-    <h3>Modos de Vista</h3>
-    <button class="button" id="normalView">
-      <span>👁️</span> Vista Normal
-    </button>
-    <button class="button" id="aerialView">
-      <span>🚁</span> Vista Aérea
-    </button>
-    <button class="button" id="waterView">
-      <span>💧</span> Vista Acuática
-    </button>
-    
-    <h3>Simulaciones</h3>
-    <button class="button" id="dayNightCycle">
-      <span>🌅</span> Ciclo Día/Noche
-    </button>
-    <button class="button" id="weatherSim">
-      <span>🌧️</span> Clima
-    </button>
-    
-    <div class="button-group">
-      <button class="button" id="resetView">
-        <span>🔄</span> Reiniciar
+
+<div class="loading" id="loading">
+  <div class="loader"></div>
+  <p style="color: white; margin-top: 20px; font-weight: 600;">Cargando ecosistema...</p>
+</div>
+
+<div id="canvas-container"></div>
+
+<div class="top-badge">
+  <span>🦆</span>
+  <span>Humedal Santa María del Lago</span>
+  <span id="birdCount">0</span> especies
+</div>
+
+<div class="ui-container">
+  <div class="glass-card">
+    <h3 style="margin-bottom: 15px; color: #1e293b;">🎥 Vistas</h3>
+    <div class="button-grid">
+      <button class="btn btn-primary" id="viewNormal">
+        <span>👁️</span> Normal
       </button>
-      <button class="button" id="fullscreen">
+      <button class="btn btn-primary" id="viewAerial">
+        <span>🚁</span> Aérea
+      </button>
+      <button class="btn btn-primary" id="viewWater">
+        <span>💧</span> Agua
+      </button>
+      <button class="btn btn-primary" id="viewBird">
+        <span>🦅</span> Ave
+      </button>
+      <button class="btn btn-primary" id="viewCinematic">
+        <span>🎬</span> Cine
+      </button>
+      <button class="btn btn-primary" id="viewFirst">
+        <span>🚶</span> Primera
+      </button>
+    </div>
+  </div>
+  
+  <div class="glass-card">
+    <h3 style="margin-bottom: 15px; color: #1e293b;">🌍 Ambiente</h3>
+    <div class="button-grid">
+      <button class="btn btn-secondary" id="toggleWeather">
+        <span>🌧️</span> Clima
+      </button>
+      <button class="btn btn-secondary" id="toggleFog">
+        <span>🌫️</span> Niebla
+      </button>
+      <button class="btn btn-secondary" id="toggleWind">
+        <span>💨</span> Viento
+      </button>
+    </div>
+    <div class="time-control">
+      <span style="font-size: 12px; color: #64748b;">⏰</span>
+      <input type="range" class="time-slider" id="timeSlider" min="0" max="24" step="0.1" value="12">
+      <span id="timeDisplay" style="font-size: 12px; min-width: 45px; color: #1e293b; font-weight: 600;">12:00</span>
+    </div>
+  </div>
+  
+  <div class="glass-card">
+    <h3 style="margin-bottom: 15px; color: #1e293b;">⚙️ Controles</h3>
+    <div class="button-grid">
+      <button class="btn btn-success" id="toggleSound">
+        <span>🔊</span> Sonido
+      </button>
+      <button class="btn btn-success" id="toggleInfo">
+        <span>ℹ️</span> Info
+      </button>
+      <button class="btn btn-success" id="toggleSpecies">
+        <span>🦜</span> Especies
+      </button>
+      <button class="btn btn-success" id="quality">
+        <span>⚡</span> Calidad
+      </button>
+      <button class="btn btn-success" id="fullscreen">
         <span>⛶</span> Pantalla
       </button>
+      <button class="btn btn-success" id="reset">
+        <span>🔄</span> Reset
+      </button>
     </div>
   </div>
-  
-  <div class="ui-panel info-panel">
-    <h2>📍 Información del Humedal</h2>
-    <p><strong>Ubicación:</strong> Bogotá, Colombia</p>
-    <p><strong>Área:</strong> 11.18 hectáreas</p>
-    <p><strong>Altitud:</strong> 2,550 m.s.n.m.</p>
-    <p><strong>Biodiversidad:</strong> Más de 120 especies registradas</p>
-    <p><strong>Importancia:</strong> Ecosistema vital para la regulación hídrica y refugio de aves migratorias</p>
-  </div>
-  
-  <div class="ui-panel stats-panel">
-    <h2>📊 Estadísticas en Tiempo Real</h2>
-    
-    <div class="stat-item">
-      <div class="stat-label">Temperatura</div>
-      <div class="stat-value" id="tempValue">18°C</div>
-    </div>
-    
-    <div class="stat-item">
-      <div class="stat-label">Calidad del Agua</div>
-      <div class="stat-value" id="waterQuality">Buena</div>
-    </div>
-    
-    <div class="stat-item">
-      <div class="stat-label">Nivel del Agua</div>
-      <div class="stat-value" id="waterLevel">Normal</div>
-    </div>
-  </div>
-  
-  <div class="help-text">
-    <p><kbd>Click + Arrastrar</kbd> Rotar vista</p>
-    <p><kbd>Scroll</kbd> Zoom</p>
-    <p><kbd>Click derecho + Arrastrar</kbd> Mover cámara</p>
-  </div>
+</div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script>
-    // Variables globales
-    let scene, camera, renderer;
-    let water, ground;
-    let birds = [];
-    let animationId;
-    let clock = new THREE.Clock();
-    let isDayNightActive = false;
-    let isWeatherActive = false;
-    let currentView = 'normal';
+<div class="info-panel glass-card" id="infoPanel">
+  <h3 style="margin-bottom: 10px; color: #1e293b;">📊 Estadísticas del Humedal</h3>
+  <div class="stats-grid">
+    <div class="stat-item">
+      <div class="stat-value" id="statBirds">0</div>
+      <div class="stat-label">Aves activas</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value" id="statTrees">0</div>
+      <div class="stat-label">Árboles</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">11.2</div>
+      <div class="stat-label">Hectáreas</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-value">2550</div>
+      <div class="stat-label">Altitud (m)</div>
+    </div>
+  </div>
+  <p style="margin-top: 15px; font-size: 13px; color: #64748b; line-height: 1.6;">
+    El Humedal Santa María del Lago es un ecosistema vital en Bogotá, hogar de más de 120 especies de aves 
+    y una gran diversidad de flora acuática y terrestre.
+  </p>
+</div>
+
+<div class="species-panel glass-card" id="speciesPanel">
+  <h3 style="color: #1e293b;">🦜 Especies Observadas</h3>
+  <div class="species-grid">
+    <div class="species-item" data-species="tingua">
+      <div class="species-icon">🦆</div>
+      <div class="species-name">Tingua Azul</div>
+    </div>
+    <div class="species-item" data-species="garza">
+      <div class="species-icon">🦢</div>
+      <div class="species-name">Garza Real</div>
+    </div>
+    <div class="species-item" data-species="colibri">
+      <div class="species-icon">🦜</div>
+      <div class="species-name">Colibrí</div>
+    </div>
+    <div class="species-item" data-species="pato">
+      <div class="species-icon">🦆</div>
+      <div class="species-name">Pato Canadiense</div>
+    </div>
+    <div class="species-item" data-species="mirla">
+      <div class="species-icon">🐦</div>
+      <div class="species-name">Mirla</div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Water.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
+
+<script>
+// Sistema principal del humedal mejorado
+class WetlandEcosystem {
+  constructor() {
+    this.scene = null;
+    this.camera = null;
+    this.renderer = null;
+    this.controls = null;
+    this.water = null;
+    this.sky = null;
+    this.sun = null;
     
-    // Inicialización
-    function init() {
-      // Escena
-      scene = new THREE.Scene();
-      scene.fog = new THREE.Fog(0x87CEEB, 50, 500);
+    this.birds = [];
+    this.vegetation = [];
+    this.particles = [];
+    
+    this.settings = {
+      quality: 'high',
+      weather: 'clear',
+      timeOfDay: 12,
+      wind: false,
+      fog: false,
+      sound: false,
+      autoRotate: false
+    };
+    
+    this.stats = {
+      birds: 0,
+      trees: 0,
+      plants: 0
+    };
+    
+    this.animations = {
+      camera: null,
+      birds: [],
+      water: null,
+      vegetation: []
+    };
+    
+    this.clock = new THREE.Clock();
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+    
+    this.init();
+  }
+  
+  init() {
+    this.setupRenderer();
+    this.setupScene();
+    this.setupLights();
+    this.createTerrain();
+    this.createWater();
+    this.createSky();
+    this.createVegetation();
+    this.createBirds();
+    this.createParticles();
+    this.setupControls();
+    this.setupEventListeners();
+    this.animate();
+    
+    // Ocultar pantalla de carga
+    setTimeout(() => {
+      document.getElementById('loading').classList.add('hidden');
+    }, 1500);
+  }
+  
+  setupRenderer() {
+    this.renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      alpha: false,
+      powerPreference: "high-performance"
+    });
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 0.5;
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+    
+    document.getElementById('canvas-container').appendChild(this.renderer.domElement);
+  }
+  
+  setupScene() {
+    this.scene = new THREE.Scene();
+    this.scene.fog = new THREE.FogExp2(0x87CEEB, 0.002);
+    
+    // Cámara con mejor FOV
+    this.camera = new THREE.PerspectiveCamera(
+      60,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      3000
+    );
+    this.camera.position.set(80, 45, 80);
+  }
+  
+  setupLights() {
+    // Luz ambiental más suave
+    const ambient = new THREE.AmbientLight(0x404040, 0.5);
+    this.scene.add(ambient);
+    
+    // Luz hemisférica para simular el cielo
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    hemiLight.position.set(0, 200, 0);
+    this.scene.add(hemiLight);
+    
+    // Sol principal
+    this.sun = new THREE.DirectionalLight(0xffffff, 1);
+    this.sun.position.set(100, 100, 50);
+    this.sun.castShadow = true;
+    this.sun.shadow.mapSize.width = 4096;
+    this.sun.shadow.mapSize.height = 4096;
+    this.sun.shadow.camera.near = 0.5;
+    this.sun.shadow.camera.far = 500;
+    this.sun.shadow.camera.left = -200;
+    this.sun.shadow.camera.right = 200;
+    this.sun.shadow.camera.top = 200;
+    this.sun.shadow.camera.bottom = -200;
+    this.scene.add(this.sun);
+    
+    // Luz de relleno
+    const fillLight = new THREE.DirectionalLight(0x4488ff, 0.3);
+    fillLight.position.set(-50, 50, -50);
+    this.scene.add(fillLight);
+  }
+  
+  createTerrain() {
+    // Terreno base con textura procedural
+    const terrainGeometry = new THREE.PlaneGeometry(500, 500, 128, 128);
+    const terrainMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2d5016,
+      roughness: 0.8,
+      metalness: 0,
+    });
+    
+    // Añadir variación de altura
+    const vertices = terrainGeometry.attributes.position.array;
+    for (let i = 0; i < vertices.length; i += 3) {
+      const x = vertices[i];
+      const y = vertices[i + 1];
+      const distance = Math.sqrt(x * x + y * y);
+      vertices[i + 2] = Math.sin(distance * 0.05) * 2 + Math.random() * 0.5;
+    }
+    terrainGeometry.computeVertexNormals();
+    
+    const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+    terrain.rotation.x = -Math.PI / 2;
+    terrain.receiveShadow = true;
+    this.scene.add(terrain);
+    
+    // Caminos y senderos
+    this.createPaths();
+  }
+  
+  createWater() {
+    // Lago principal más grande con forma orgánica
+    const shape = new THREE.Shape();
+    
+    // Crear forma irregular del lago principal
+    shape.moveTo(60, 0);
+    shape.bezierCurveTo(60, 30, 40, 45, 20, 45);
+    shape.bezierCurveTo(0, 45, -30, 40, -40, 20);
+    shape.bezierCurveTo(-50, 0, -45, -25, -30, -35);
+    shape.bezierCurveTo(-15, -45, 10, -45, 30, -35);
+    shape.bezierCurveTo(50, -25, 60, -10, 60, 0);
+    
+    const waterGeometry = new THREE.ShapeGeometry(shape, 64);
+    
+    // Water shader mejorado
+    const waterTexture = new THREE.TextureLoader().load(
+      'https://threejs.org/examples/textures/waternormals.jpg',
+      (texture) => {
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      }
+    );
+    
+    // Lago principal
+    this.water = new THREE.Water(waterGeometry, {
+      textureWidth: 512,
+      textureHeight: 512,
+      waterNormals: waterTexture,
+      sunDirection: new THREE.Vector3(),
+      sunColor: 0xffffff,
+      waterColor: 0x2c5f7c,
+      distortionScale: 2.5,
+      fog: this.scene.fog !== undefined
+    });
+    
+    this.water.rotation.x = -Math.PI / 2;
+    this.water.position.y = 0.5;
+    this.scene.add(this.water);
+    
+    // Lagunas secundarias conectadas
+    this.createSecondaryPonds();
+    
+    // Canales y arroyos
+    this.createWaterChannels();
+    
+    // Cascada pequeña
+    this.createWaterfall();
+    
+    // Zonas pantanosas
+    this.createMarshAreas();
+    
+    // Nenúfares y plantas acuáticas
+    this.createAquaticPlants();
+  }
+  
+  createSecondaryPonds() {
+    // Crear 3 lagunas secundarias más pequeñas
+    const pondPositions = [
+      { x: 70, z: 30, radius: 15 },
+      { x: -60, z: 40, radius: 12 },
+      { x: 30, z: -60, radius: 18 }
+    ];
+    
+    pondPositions.forEach(pos => {
+      const pondGeometry = new THREE.CircleGeometry(pos.radius, 32);
+      const pond = new THREE.Water(pondGeometry, {
+        textureWidth: 256,
+        textureHeight: 256,
+        waterNormals: new THREE.TextureLoader().load(
+          'https://threejs.org/examples/textures/waternormals.jpg',
+          (t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
+        ),
+        sunDirection: new THREE.Vector3(),
+        sunColor: 0xffffff,
+        waterColor: 0x3d6a8c,
+        distortionScale: 1.5,
+        fog: this.scene.fog !== undefined
+      });
       
-      // Cámara
-      camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
+      pond.rotation.x = -Math.PI / 2;
+      pond.position.set(pos.x, 0.4, pos.z);
+      this.scene.add(pond);
+      
+      // Añadir vegetación alrededor
+      this.createPondVegetation(pos.x, pos.z, pos.radius);
+    });
+  }
+  
+  createWaterChannels() {
+    // Crear canales que conectan las lagunas
+    const channels = [
+      { start: { x: 40, z: 0 }, end: { x: 70, z: 30 }, width: 3 },
+      { start: { x: -30, z: 20 }, end: { x: -60, z: 40 }, width: 2.5 },
+      { start: { x: 20, z: -35 }, end: { x: 30, z: -60 }, width: 3.5 }
+    ];
+    
+    channels.forEach(channel => {
+      const length = Math.sqrt(
+        Math.pow(channel.end.x - channel.start.x, 2) + 
+        Math.pow(channel.end.z - channel.start.z, 2)
       );
-      camera.position.set(50, 30, 50);
-      camera.lookAt(0, 0, 0);
       
-      // Renderer
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      renderer.setClearColor(0x87CEEB, 1);
-      document.getElementById('canvas-container').appendChild(renderer.domElement);
+      const channelGeometry = new THREE.PlaneGeometry(channel.width, length, 32, 32);
       
-      // Controles de órbita simples
-      setupOrbitControls();
-      
-      // Luces
-      setupLights();
-      
-      // Crear el humedal
-      createWetland();
-      
-      // Crear vegetación
-      createVegetation();
-      
-      // Crear aves
-      createBirds();
-      
-      // Setup UI
-      setupUI();
-      
-      // Ocultar pantalla de carga
-      setTimeout(() => {
-        const loadingScreen = document.getElementById('loadingScreen');
-        loadingScreen.style.opacity = '0';
-        setTimeout(() => {
-          loadingScreen.style.display = 'none';
-        }, 500);
-      }, 1500);
-      
-      // Event listeners
-      window.addEventListener('resize', onWindowResize);
-    }
-    
-    function setupLights() {
-      // Luz ambiental
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-      scene.add(ambientLight);
-      
-      // Luz direccional (sol)
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(50, 100, 50);
-      directionalLight.castShadow = true;
-      directionalLight.shadow.camera.left = -100;
-      directionalLight.shadow.camera.right = 100;
-      directionalLight.shadow.camera.top = 100;
-      directionalLight.shadow.camera.bottom = -100;
-      directionalLight.shadow.mapSize.width = 2048;
-      directionalLight.shadow.mapSize.height = 2048;
-      scene.add(directionalLight);
-      
-      // Luz hemisférica
-      const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x545454, 0.4);
-      scene.add(hemisphereLight);
-    }
-    
-    function createWetland() {
-      // Terreno base
-      const groundGeometry = new THREE.PlaneGeometry(200, 200, 32, 32);
-      const groundMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0x3a5f3a,
-        side: THREE.DoubleSide
-      });
-      
-      // Añadir algo de variación al terreno
-      const vertices = groundGeometry.attributes.position.array;
+      // Añadir variación de profundidad
+      const vertices = channelGeometry.attributes.position.array;
       for (let i = 0; i < vertices.length; i += 3) {
-        vertices[i + 2] = Math.random() * 2 - 1;
+        vertices[i + 2] = Math.sin(vertices[i + 1] * 0.1) * 0.2;
       }
-      groundGeometry.computeVertexNormals();
       
-      ground = new THREE.Mesh(groundGeometry, groundMaterial);
-      ground.rotation.x = -Math.PI / 2;
-      ground.receiveShadow = true;
-      scene.add(ground);
+      const channelWater = new THREE.Mesh(
+        channelGeometry,
+        new THREE.MeshStandardMaterial({
+          color: 0x2c5f7c,
+          transparent: true,
+          opacity: 0.8,
+          metalness: 0.3,
+          roughness: 0.1
+        })
+      );
       
-      // Lago central
-      const lakeGeometry = new THREE.CircleGeometry(30, 64);
-      const lakeMaterial = new THREE.MeshPhongMaterial({
-        color: 0x006994,
-        shininess: 100,
-        reflectivity: 0.8,
+      const midX = (channel.start.x + channel.end.x) / 2;
+      const midZ = (channel.start.z + channel.end.z) / 2;
+      const angle = Math.atan2(
+        channel.end.z - channel.start.z,
+        channel.end.x - channel.start.x
+      );
+      
+      channelWater.position.set(midX, 0.3, midZ);
+      channelWater.rotation.x = -Math.PI / 2;
+      channelWater.rotation.z = angle;
+      channelWater.receiveShadow = true;
+      
+      this.scene.add(channelWater);
+    });
+  }
+  
+  createWaterfall() {
+    // Crear una pequeña cascada decorativa
+    const waterfallGroup = new THREE.Group();
+    
+    // Rocas de la cascada
+    const rockGeometry = new THREE.DodecahedronGeometry(2, 0);
+    const rockMaterial = new THREE.MeshStandardMaterial({
+      color: 0x4a4a4a,
+      roughness: 0.9
+    });
+    
+    for (let i = 0; i < 5; i++) {
+      const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+      rock.position.set(
+        -50 + Math.random() * 5,
+        i * 1.5,
+        -20 + Math.random() * 5
+      );
+      rock.scale.set(
+        0.8 + Math.random() * 0.6,
+        0.8 + Math.random() * 0.6,
+        0.8 + Math.random() * 0.6
+      );
+      rock.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        Math.random() * Math.PI
+      );
+      rock.castShadow = true;
+      rock.receiveShadow = true;
+      waterfallGroup.add(rock);
+    }
+    
+    // Partículas de agua cayendo
+    const waterfallParticles = new THREE.BufferGeometry();
+    const particleCount = 200;
+    const positions = new Float32Array(particleCount * 3);
+    
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      positions[i] = -50 + Math.random() * 2;
+      positions[i + 1] = Math.random() * 8;
+      positions[i + 2] = -20 + Math.random() * 2;
+    }
+    
+    waterfallParticles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const waterfallMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.3,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending
+    });
+    
+    this.waterfallPoints = new THREE.Points(waterfallParticles, waterfallMaterial);
+    waterfallGroup.add(this.waterfallPoints);
+    
+    this.scene.add(waterfallGroup);
+  }
+  
+  createMarshAreas() {
+    // Crear áreas pantanosas con agua poco profunda
+    const marshAreas = [
+      { x: 45, z: -40, radius: 8 },
+      { x: -70, z: 10, radius: 10 },
+      { x: 20, z: 50, radius: 7 }
+    ];
+    
+    marshAreas.forEach(area => {
+      // Agua pantanosa
+      const marshGeometry = new THREE.CircleGeometry(area.radius, 16);
+      const marshMaterial = new THREE.MeshStandardMaterial({
+        color: 0x3a5f3a,
         transparent: true,
-        opacity: 0.8
+        opacity: 0.6,
+        roughness: 0.8,
+        metalness: 0.1
       });
       
-      water = new THREE.Mesh(lakeGeometry, lakeMaterial);
-      water.rotation.x = -Math.PI / 2;
-      water.position.y = 0.1;
-      water.receiveShadow = true;
-      scene.add(water);
+      const marsh = new THREE.Mesh(marshGeometry, marshMaterial);
+      marsh.rotation.x = -Math.PI / 2;
+      marsh.position.set(area.x, 0.1, area.z);
+      marsh.receiveShadow = true;
+      this.scene.add(marsh);
       
-      // Islas pequeñas
-      for (let i = 0; i < 3; i++) {
-        const islandGeometry = new THREE.ConeGeometry(5, 2, 8);
-        const islandMaterial = new THREE.MeshLambertMaterial({ color: 0x4a5f4a });
-        const island = new THREE.Mesh(islandGeometry, islandMaterial);
+      // Añadir juncos densos
+      for (let i = 0; i < 30; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * area.radius;
+        const reedHeight = 2 + Math.random() * 1.5;
         
-        const angle = (i / 3) * Math.PI * 2;
-        island.position.x = Math.cos(angle) * 15;
-        island.position.z = Math.sin(angle) * 15;
-        island.position.y = 1;
-        island.castShadow = true;
-        island.receiveShadow = true;
-        scene.add(island);
+        const reed = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.05, 0.08, reedHeight, 4),
+          new THREE.MeshLambertMaterial({ color: 0x4a6741 })
+        );
+        
+        reed.position.set(
+          area.x + Math.cos(angle) * distance,
+          reedHeight / 2,
+          area.z + Math.sin(angle) * distance
+        );
+        reed.castShadow = true;
+        this.scene.add(reed);
       }
-    }
+    });
+  }
+  
+  createPondVegetation(x, z, radius) {
+    // Crear vegetación específica alrededor de cada laguna
+    const vegetationCount = Math.floor(radius * 2);
     
-    function createVegetation() {
-      // Árboles
-      const treeGeometry = new THREE.ConeGeometry(3, 10, 8);
-      const treeMaterial = new THREE.MeshLambertMaterial({ color: 0x0d5f0d });
-      const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.7, 3);
-      const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+    for (let i = 0; i < vegetationCount; i++) {
+      const angle = (i / vegetationCount) * Math.PI * 2;
+      const distance = radius + 2 + Math.random() * 3;
       
-      for (let i = 0; i < 25; i++) {
-        const tree = new THREE.Group();
-        
-        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-        trunk.position.y = 1.5;
-        tree.add(trunk);
-        
-        const foliage = new THREE.Mesh(treeGeometry, treeMaterial);
-        foliage.position.y = 6;
-        tree.add(foliage);
-        
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 40 + Math.random() * 40;
-        tree.position.x = Math.cos(angle) * radius;
-        tree.position.z = Math.sin(angle) * radius;
-        
-        tree.scale.set(
-          0.8 + Math.random() * 0.4,
-          0.8 + Math.random() * 0.4,
-          0.8 + Math.random() * 0.4
+      // Mezcla de juncos y arbustos
+      if (Math.random() > 0.5) {
+        const reed = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.04, 0.07, 2.5, 5),
+          new THREE.MeshLambertMaterial({ color: 0x5a7a4a })
         );
-        
-        tree.castShadow = true;
-        tree.receiveShadow = true;
-        scene.add(tree);
-      }
-      
-      // Arbustos
-      const bushGeometry = new THREE.SphereGeometry(2, 8, 6);
-      const bushMaterial = new THREE.MeshLambertMaterial({ color: 0x2d5f2d });
-      
-      for (let i = 0; i < 40; i++) {
-        const bush = new THREE.Mesh(bushGeometry, bushMaterial);
-        
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 20 + Math.random() * 60;
-        bush.position.x = Math.cos(angle) * radius;
-        bush.position.z = Math.sin(angle) * radius;
-        bush.position.y = 1;
-        
-        bush.scale.set(
-          0.5 + Math.random() * 0.5,
-          0.3 + Math.random() * 0.3,
-          0.5 + Math.random() * 0.5
+        reed.position.set(
+          x + Math.cos(angle) * distance,
+          1.25,
+          z + Math.sin(angle) * distance
         );
-        
+        reed.castShadow = true;
+        this.scene.add(reed);
+      } else {
+        const bush = new THREE.Mesh(
+          new THREE.SphereGeometry(0.8, 5, 4),
+          new THREE.MeshLambertMaterial({ color: 0x3a5a3a })
+        );
+        bush.position.set(
+          x + Math.cos(angle) * distance,
+          0.4,
+          z + Math.sin(angle) * distance
+        );
+        bush.scale.set(1.2, 0.8, 1.2);
         bush.castShadow = true;
-        bush.receiveShadow = true;
-        scene.add(bush);
+        this.scene.add(bush);
+      }
+    }
+  }
+  
+  createSky() {
+    // Sky shader para ciclo día/noche
+    this.sky = new THREE.Sky();
+    this.sky.scale.setScalar(10000);
+    this.scene.add(this.sky);
+    
+    const skyUniforms = this.sky.material.uniforms;
+    skyUniforms['turbidity'].value = 10;
+    skyUniforms['rayleigh'].value = 2;
+    skyUniforms['mieCoefficient'].value = 0.005;
+    skyUniforms['mieDirectionalG'].value = 0.8;
+    
+    this.updateSun();
+  }
+  
+  updateSun() {
+    const phi = THREE.MathUtils.degToRad(90 - this.getSunElevation());
+    const theta = THREE.MathUtils.degToRad(this.getSunAzimuth());
+    
+    const sunPosition = new THREE.Vector3();
+    sunPosition.setFromSphericalCoords(1, phi, theta);
+    
+    this.sky.material.uniforms['sunPosition'].value.copy(sunPosition);
+    this.water.material.uniforms['sunDirection'].value.copy(sunPosition).normalize();
+    
+    // Actualizar color de la luz según la hora
+    this.updateLightColors();
+  }
+  
+  getSunElevation() {
+    const hour = this.settings.timeOfDay;
+    if (hour < 6 || hour > 18) return -10;
+    const normalized = (hour - 6) / 12;
+    return Math.sin(normalized * Math.PI) * 70;
+  }
+  
+  getSunAzimuth() {
+    return (this.settings.timeOfDay / 24) * 360 - 180;
+  }
+  
+  updateLightColors() {
+    const hour = this.settings.timeOfDay;
+    let intensity = 1;
+    let color = new THREE.Color(0xffffff);
+    
+    if (hour < 6 || hour > 20) {
+      // Noche
+      intensity = 0.1;
+      color = new THREE.Color(0x1a237e);
+      this.scene.fog.color = new THREE.Color(0x000033);
+    } else if (hour < 8 || hour > 18) {
+      // Amanecer/Atardecer
+      intensity = 0.7;
+      color = new THREE.Color(0xff6b35);
+      this.scene.fog.color = new THREE.Color(0xff9966);
+    } else {
+      // Día
+      intensity = 1;
+      color = new THREE.Color(0xffffff);
+      this.scene.fog.color = new THREE.Color(0x87CEEB);
+    }
+    
+    this.sun.intensity = intensity;
+    this.sun.color = color;
+    this.renderer.toneMappingExposure = 0.3 + intensity * 0.5;
+  }
+  
+  createVegetation() {
+    // Árboles con diferentes tipos
+    const treeTypes = [
+      { height: 15, radius: 3, color: 0x2d5f2d, count: 30 },
+      { height: 10, radius: 2.5, color: 0x3a7a3a, count: 40 },
+      { height: 20, radius: 4, color: 0x1b4f1b, count: 20 }
+    ];
+    
+    treeTypes.forEach(type => {
+      for (let i = 0; i < type.count; i++) {
+        const tree = this.createTree(type);
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 45 + Math.random() * 80;
+        tree.position.set(
+          Math.cos(angle) * distance,
+          0,
+          Math.sin(angle) * distance
+        );
+        this.scene.add(tree);
+        this.vegetation.push(tree);
+        this.stats.trees++;
+      }
+    });
+    
+    // Arbustos y plantas pequeñas
+    this.createBushes(60);
+    this.createGrass(200);
+    
+    // Juncos alrededor del agua
+    this.createReeds(100);
+    
+    document.getElementById('statTrees').textContent = this.stats.trees;
+  }
+  
+  createTree(type) {
+    const group = new THREE.Group();
+    
+    // Tronco
+    const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.8, type.height * 0.4, 8);
+    const trunkMaterial = new THREE.MeshStandardMaterial({
+      color: 0x4a3c28,
+      roughness: 0.8
+    });
+    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+    trunk.position.y = type.height * 0.2;
+    trunk.castShadow = true;
+    trunk.receiveShadow = true;
+    group.add(trunk);
+    
+    // Copa del árbol con múltiples esferas
+    for (let i = 0; i < 3; i++) {
+      const crownGeometry = new THREE.SphereGeometry(
+        type.radius * (1 - i * 0.2),
+        8,
+        6
+      );
+      const crownMaterial = new THREE.MeshLambertMaterial({
+        color: type.color
+      });
+      const crown = new THREE.Mesh(crownGeometry, crownMaterial);
+      crown.position.y = type.height * 0.5 + i * 2;
+      crown.castShadow = true;
+      crown.receiveShadow = true;
+      group.add(crown);
+    }
+    
+    return group;
+  }
+  
+  createBushes(count) {
+    const bushGeometry = new THREE.SphereGeometry(1.5, 6, 5);
+    const bushMaterial = new THREE.MeshLambertMaterial({ color: 0x3a5f3a });
+    
+    for (let i = 0; i < count; i++) {
+      const bush = new THREE.Mesh(bushGeometry, bushMaterial);
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 40 + Math.random() * 60;
+      bush.position.set(
+        Math.cos(angle) * distance,
+        0.8,
+        Math.sin(angle) * distance
+      );
+      bush.scale.set(
+        0.8 + Math.random() * 0.5,
+        0.6 + Math.random() * 0.4,
+        0.8 + Math.random() * 0.5
+      );
+      bush.castShadow = true;
+      bush.receiveShadow = true;
+      this.scene.add(bush);
+      this.vegetation.push(bush);
+    }
+  }
+  
+  createGrass(count) {
+    const grassGeometry = new THREE.ConeGeometry(0.1, 1, 4);
+    const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x4a7c4a });
+    const grassMesh = new THREE.InstancedMesh(grassGeometry, grassMaterial, count);
+    
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 20 + Math.random() * 100;
+      dummy.position.set(
+        Math.cos(angle) * distance,
+        0.5,
+        Math.sin(angle) * distance
+      );
+      dummy.rotation.set(
+        Math.random() * 0.3 - 0.15,
+        Math.random() * Math.PI * 2,
+        Math.random() * 0.3 - 0.15
+      );
+      dummy.scale.setScalar(0.5 + Math.random() * 0.5);
+      dummy.updateMatrix();
+      grassMesh.setMatrixAt(i, dummy.matrix);
+    }
+    
+    grassMesh.castShadow = true;
+    grassMesh.receiveShadow = true;
+    this.scene.add(grassMesh);
+  }
+  
+  createReeds(count) {
+    const reedGeometry = new THREE.CylinderGeometry(0.05, 0.1, 3, 6);
+    const reedMaterial = new THREE.MeshLambertMaterial({ color: 0x8b7355 });
+    
+    for (let i = 0; i < count; i++) {
+      const reed = new THREE.Mesh(reedGeometry, reedMaterial);
+      const angle = (i / count) * Math.PI * 2;
+      const distance = 35 + Math.random() * 3;
+      reed.position.set(
+        Math.cos(angle) * distance,
+        1.5,
+        Math.sin(angle) * distance
+      );
+      reed.rotation.z = Math.random() * 0.2 - 0.1;
+      reed.scale.y = 0.8 + Math.random() * 0.4;
+      reed.castShadow = true;
+      this.scene.add(reed);
+      this.vegetation.push(reed);
+    }
+  }
+  
+  createAquaticPlants() {
+    // Nenúfares en el lago principal
+    const lilyPadGeometry = new THREE.CircleGeometry(0.8, 8);
+    const lilyPadMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2d5f2d,
+      roughness: 0.3,
+      metalness: 0
+    });
+    
+    // Más nenúfares distribuidos en todas las áreas de agua
+    for (let i = 0; i < 80; i++) {
+      const lilyPad = new THREE.Mesh(lilyPadGeometry, lilyPadMaterial);
+      
+      // Distribuir en lago principal y lagunas secundarias
+      let x, z;
+      if (i < 40) {
+        // Lago principal
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 5 + Math.random() * 30;
+        x = Math.cos(angle) * distance;
+        z = Math.sin(angle) * distance;
+      } else if (i < 55) {
+        // Primera laguna secundaria
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 12;
+        x = 70 + Math.cos(angle) * distance;
+        z = 30 + Math.sin(angle) * distance;
+      } else if (i < 68) {
+        // Segunda laguna secundaria
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 10;
+        x = -60 + Math.cos(angle) * distance;
+        z = 40 + Math.sin(angle) * distance;
+      } else {
+        // Tercera laguna secundaria
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 15;
+        x = 30 + Math.cos(angle) * distance;
+        z = -60 + Math.sin(angle) * distance;
+      }
+      
+      lilyPad.position.set(x, 0.55, z);
+      lilyPad.rotation.x = -Math.PI / 2;
+      lilyPad.rotation.z = Math.random() * Math.PI * 2;
+      lilyPad.scale.setScalar(0.5 + Math.random() * 0.5);
+      lilyPad.receiveShadow = true;
+      this.scene.add(lilyPad);
+      
+      // Flor de loto ocasional
+      if (Math.random() > 0.7) {
+        const flower = this.createLotusFlower();
+        flower.position.copy(lilyPad.position);
+        flower.position.y += 0.3;
+        this.scene.add(flower);
       }
     }
     
-    function createBirds() {
-      const birdGeometry = new THREE.ConeGeometry(0.5, 2, 4);
-      const birdMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
-      
-      for (let i = 0; i < 10; i++) {
-        const bird = new THREE.Mesh(birdGeometry, birdMaterial);
-        bird.rotation.x = Math.PI / 2;
-        
-        bird.userData = {
-          angle: Math.random() * Math.PI * 2,
-          radius: 20 + Math.random() * 30,
-          speed: 0.5 + Math.random() * 0.5,
-          heightOffset: Math.random() * 10
-        };
-        
-        bird.castShadow = true;
-        birds.push(bird);
-        scene.add(bird);
-      }
-      
-      updateSpeciesCount();
-    }
+    // Algas flotantes
+    this.createFloatingAlgae();
     
-    function updateSpeciesCount() {
-      document.getElementById('speciesCount').textContent = birds.length;
-    }
+    // Totora y plantas emergentes
+    this.createEmergentPlants();
+  }
+  
+  createFloatingAlgae() {
+    // Crear manchas de algas flotantes
+    const algaeGeometry = new THREE.PlaneGeometry(3, 3, 8, 8);
+    const algaeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x3a5a2a,
+      transparent: true,
+      opacity: 0.7,
+      roughness: 0.9,
+      side: THREE.DoubleSide
+    });
     
-    function setupOrbitControls() {
-      let mouseX = 0, mouseY = 0;
-      let targetX = 0, targetY = 0;
-      let isMouseDown = false;
-      let zoom = 1;
-      
-      renderer.domElement.addEventListener('mousedown', (e) => {
-        isMouseDown = true;
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-      });
-      
-      renderer.domElement.addEventListener('mouseup', () => {
-        isMouseDown = false;
-      });
-      
-      renderer.domElement.addEventListener('mousemove', (e) => {
-        if (isMouseDown) {
-          targetX += (e.clientX - mouseX) * 0.5;
-          targetY += (e.clientY - mouseY) * 0.5;
-          mouseX = e.clientX;
-          mouseY = e.clientY;
-        }
-      });
-      
-      renderer.domElement.addEventListener('wheel', (e) => {
-        zoom += e.deltaY * 0.001;
-        zoom = Math.max(0.5, Math.min(2, zoom));
-      });
-      
-      // Update camera en animate()
-      window.updateCamera = function() {
-        const radius = 70 * zoom;
-        camera.position.x = Math.cos(targetX * 0.01) * radius;
-        camera.position.z = Math.sin(targetX * 0.01) * radius;
-        camera.position.y = 30 + targetY * 0.1;
-        camera.lookAt(0, 0, 0);
-      };
+    // Deformar la geometría para hacerla más orgánica
+    const vertices = algaeGeometry.attributes.position.array;
+    for (let i = 0; i < vertices.length; i += 3) {
+      vertices[i + 2] = Math.random() * 0.2 - 0.1;
     }
+    algaeGeometry.computeVertexNormals();
     
-    function setupUI() {
-      // Vista normal
-      document.getElementById('normalView').addEventListener('click', () => {
-        currentView = 'normal';
-        camera.position.set(50, 30, 50);
-        camera.lookAt(0, 0, 0);
-        updateActiveButton('normalView');
-      });
-      
-      // Vista aérea
-      document.getElementById('aerialView').addEventListener('click', () => {
-        currentView = 'aerial';
-        camera.position.set(0, 100, 0);
-        camera.lookAt(0, 0, 0);
-        updateActiveButton('aerialView');
-      });
-      
-      // Vista acuática
-      document.getElementById('waterView').addEventListener('click', () => {
-        currentView = 'water';
-        camera.position.set(0, 2, 30);
-        camera.lookAt(0, 5, 0);
-        updateActiveButton('waterView');
-      });
-      
-      // Ciclo día/noche
-      document.getElementById('dayNightCycle').addEventListener('click', () => {
-        isDayNightActive = !isDayNightActive;
-        document.getElementById('dayNightCycle').classList.toggle('active');
-      });
-      
-      // Simulación de clima
-      document.getElementById('weatherSim').addEventListener('click', () => {
-        isWeatherActive = !isWeatherActive;
-        document.getElementById('weatherSim').classList.toggle('active');
+    // Crear varias manchas de algas
+    for (let i = 0; i < 15; i++) {
+      const algae = new THREE.Mesh(algaeGeometry, algaeMaterial);
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 10 + Math.random() * 25;
+      algae.position.set(
+        Math.cos(angle) * distance,
+        0.52,
+        Math.sin(angle) * distance
+      );
+      algae.rotation.x = -Math.PI / 2;
+      algae.rotation.z = Math.random() * Math.PI;
+      algae.scale.set(
+        0.5 + Math.random() * 1,
+        0.5 + Math.random() * 1,
+        1
+      );
+      this.scene.add(algae);
+    }
+  }
+  
+  createEmergentPlants() {
+    // Totora y plantas que emergen del agua
+    const emergentTypes = [
+      { height: 3, radius: 0.08, color: 0x6b8e23, bend: 0.1 },
+      { height: 2.5, radius: 0.06, color: 0x8fbc8f, bend: 0.15 },
+      { height: 3.5, radius: 0.1, color: 0x556b2f, bend: 0.08 }
+    ];
+    
+    emergentTypes.forEach(type => {
+      for (let i = 0; i < 40; i++) {
+        const plant = new THREE.Group();
         
-        if (isWeatherActive) {
-          scene.fog = new THREE.Fog(0x808080, 10, 200);
-          renderer.setClearColor(0x808080, 1);
-        } else {
-          scene.fog = new THREE.Fog(0x87CEEB, 50, 500);
-          renderer.setClearColor(0x87CEEB, 1);
-        }
-      });
-      
-      // Reiniciar vista
-      document.getElementById('resetView').addEventListener('click', () => {
-        camera.position.set(50, 30, 50);
-        camera.lookAt(0, 0, 0);
-        isDayNightActive = false;
-        isWeatherActive = false;
-        currentView = 'normal';
-        document.querySelectorAll('.button.active').forEach(btn => {
-          btn.classList.remove('active');
+        // Tallo principal
+        const stemGeometry = new THREE.CylinderGeometry(
+          type.radius * 0.7,
+          type.radius,
+          type.height,
+          6
+        );
+        const stemMaterial = new THREE.MeshLambertMaterial({
+          color: type.color
         });
-        scene.fog = new THREE.Fog(0x87CEEB, 50, 500);
-        renderer.setClearColor(0x87CEEB, 1);
-      });
-      
-      // Pantalla completa
-      document.getElementById('fullscreen').addEventListener('click', () => {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen();
+        const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+        stem.position.y = type.height / 2;
+        plant.add(stem);
+        
+        // Hojas
+        for (let j = 0; j < 3; j++) {
+          const leafGeometry = new THREE.ConeGeometry(0.2, 0.8, 4);
+          const leaf = new THREE.Mesh(leafGeometry, stemMaterial);
+          leaf.position.y = type.height * (0.5 + j * 0.2);
+          leaf.position.x = Math.random() * 0.3 - 0.15;
+          leaf.rotation.z = Math.random() * 0.5 - 0.25;
+          plant.add(leaf);
+        }
+        
+        // Posicionar en bordes de agua
+        const waterEdge = Math.random() < 0.5;
+        let x, z;
+        
+        if (waterEdge) {
+          // Borde del lago principal
+          const angle = Math.random() * Math.PI * 2;
+          const distance = 32 + Math.random() * 8;
+          x = Math.cos(angle) * distance;
+          z = Math.sin(angle) * distance;
         } else {
-          document.exitFullscreen();
-        }
-      });
-      
-      // Actualizar estadísticas simuladas
-      setInterval(() => {
-        document.getElementById('tempValue').textContent = 
-          (15 + Math.random() * 8).toFixed(1) + '°C';
-        
-        const waterQualities = ['Excelente', 'Buena', 'Normal'];
-        document.getElementById('waterQuality').textContent = 
-          waterQualities[Math.floor(Math.random() * waterQualities.length)];
-        
-        const waterLevels = ['Alto', 'Normal', 'Medio'];
-        document.getElementById('waterLevel').textContent = 
-          waterLevels[Math.floor(Math.random() * waterLevels.length)];
-      }, 5000);
-    }
-    
-    function updateActiveButton(buttonId) {
-      document.querySelectorAll('.button').forEach(btn => {
-        if (btn.id === 'normalView' || btn.id === 'aerialView' || btn.id === 'waterView') {
-          btn.classList.remove('active');
-        }
-      });
-      document.getElementById(buttonId).classList.add('active');
-    }
-    
-    function animateBirds() {
-      birds.forEach(bird => {
-        bird.userData.angle += bird.userData.speed * 0.01;
-        
-        bird.position.x = Math.cos(bird.userData.angle) * bird.userData.radius;
-        bird.position.z = Math.sin(bird.userData.angle) * bird.userData.radius;
-        bird.position.y = 15 + Math.sin(clock.getElapsedTime() * 2) * 2 + bird.userData.heightOffset;
-        
-        bird.rotation.y = bird.userData.angle + Math.PI / 2;
-      });
-    }
-    
-    function animateWater() {
-      if (water) {
-        water.position.y = 0.1 + Math.sin(clock.getElapsedTime()) * 0.05;
-      }
-    }
-    
-    function animateDayNight() {
-      if (isDayNightActive) {
-        const time = clock.getElapsedTime() * 0.1;
-        const intensity = (Math.sin(time) + 1) * 0.5;
-        
-        scene.children.forEach(child => {
-          if (child.type === 'DirectionalLight') {
-            child.intensity = 0.2 + intensity * 0.8;
+          // Bordes de lagunas secundarias
+          const pond = Math.floor(Math.random() * 3);
+          const angle = Math.random() * Math.PI * 2;
+          let centerX, centerZ, radius;
+          
+          switch(pond) {
+            case 0:
+              centerX = 70; centerZ = 30; radius = 15;
+              break;
+            case 1:
+              centerX = -60; centerZ = 40; radius = 12;
+              break;
+            default:
+              centerX = 30; centerZ = -60; radius = 18;
           }
-          if (child.type === 'AmbientLight') {
-            child.intensity = 0.3 + intensity * 0.4;
-          }
-        });
+          
+          const distance = radius - 2 + Math.random() * 6;
+          x = centerX + Math.cos(angle) * distance;
+          z = centerZ + Math.sin(angle) * distance;
+        }
         
-        const skyColor = new THREE.Color().setHSL(0.6, 0.5, 0.2 + intensity * 0.6);
-        renderer.setClearColor(skyColor, 1);
-        scene.fog.color = skyColor;
+        plant.position.set(x, 0, z);
+        plant.rotation.y = Math.random() * Math.PI * 2;
+        plant.rotation.z = Math.random() * type.bend - type.bend / 2;
+        plant.castShadow = true;
+        
+        this.scene.add(plant);
+        this.vegetation.push(plant);
       }
+    });
+  }
+  
+  createLotusFlower() {
+    const group = new THREE.Group();
+    const petalGeometry = new THREE.SphereGeometry(0.3, 4, 2);
+    const petalMaterial = new THREE.MeshLambertMaterial({ color: 0xffb6c1 });
+    
+    for (let i = 0; i < 8; i++) {
+      const petal = new THREE.Mesh(petalGeometry, petalMaterial);
+      const angle = (i / 8) * Math.PI * 2;
+      petal.position.set(Math.cos(angle) * 0.2, 0, Math.sin(angle) * 0.2);
+      petal.scale.set(1.5, 0.5, 1);
+      petal.rotation.z = angle;
+      group.add(petal);
     }
     
-    function animate() {
-      animationId = requestAnimationFrame(animate);
+    return group;
+  }
+  
+  createPaths() {
+    const pathMaterial = new THREE.MeshStandardMaterial({
+      color: 0x8b7355,
+      roughness: 0.9
+    });
+    
+    // Sendero principal circular
+    const pathRadius = 42;
+    const pathWidth = 2;
+    const segments = 64;
+    
+    for (let i = 0; i < segments; i++) {
+      const angle1 = (i / segments) * Math.PI * 2;
+      const angle2 = ((i + 1) / segments) * Math.PI * 2;
       
-      // Actualizar controles de cámara
-      if (window.updateCamera) {
-        window.updateCamera();
+      const geometry = new THREE.PlaneGeometry(pathWidth, 3);
+      const path = new THREE.Mesh(geometry, pathMaterial);
+      
+      const midAngle = (angle1 + angle2) / 2;
+      path.position.set(
+        Math.cos(midAngle) * pathRadius,
+        0.02,
+        Math.sin(midAngle) * pathRadius
+      );
+      path.rotation.x = -Math.PI / 2;
+      path.rotation.z = midAngle + Math.PI / 2;
+      path.receiveShadow = true;
+      
+      this.scene.add(path);
+    }
+  }
+  
+  createBirds() {
+    // Diferentes tipos de aves
+    const birdTypes = [
+      { name: 'tingua', color: 0x4169e1, size: 0.8, speed: 1, count: 5 },
+      { name: 'garza', color: 0xffffff, size: 1.2, speed: 0.8, count: 3 },
+      { name: 'colibri', color: 0x00ff00, size: 0.3, speed: 2, count: 8 },
+      { name: 'pato', color: 0x8b4513, size: 1, speed: 0.6, count: 6 },
+      { name: 'mirla', color: 0x000000, size: 0.5, speed: 1.2, count: 10 }
+    ];
+    
+    birdTypes.forEach(type => {
+      for (let i = 0; i < type.count; i++) {
+        const bird = this.createBird(type);
+        this.birds.push(bird);
+        this.scene.add(bird.mesh);
+        this.stats.birds++;
       }
+    });
+    
+    document.getElementById('birdCount').textContent = this.stats.birds;
+    document.getElementById('statBirds').textContent = this.stats.birds;
+  }
+  
+  createBird(type) {
+    const group = new THREE.Group();
+    
+    // Cuerpo
+    const bodyGeometry = new THREE.SphereGeometry(type.size * 0.5, 6, 4);
+    const bodyMaterial = new THREE.MeshLambertMaterial({ color: type.color });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    group.add(body);
+    
+    // Alas
+    const wingGeometry = new THREE.ConeGeometry(type.size * 0.3, type.size * 1.2, 4);
+    const wingMaterial = new THREE.MeshLambertMaterial({ color: type.color });
+    
+    const leftWing = new THREE.Mesh(wingGeometry, wingMaterial);
+    leftWing.position.set(-type.size * 0.5, 0, 0);
+    leftWing.rotation.z = Math.PI / 2;
+    group.add(leftWing);
+    
+    const rightWing = new THREE.Mesh(wingGeometry, wingMaterial);
+    rightWing.position.set(type.size * 0.5, 0, 0);
+    rightWing.rotation.z = -Math.PI / 2;
+    group.add(rightWing);
+    
+    group.castShadow = true;
+    
+    // Configuración de movimiento
+    const bird = {
+      mesh: group,
+      type: type.name,
+      angle: Math.random() * Math.PI * 2,
+      radius: 20 + Math.random() * 40,
+      height: 10 + Math.random() * 20,
+      speed: type.speed * (0.8 + Math.random() * 0.4),
+      verticalPhase: Math.random() * Math.PI * 2,
+      wings: { left: leftWing, right: rightWing }
+    };
+    
+    return bird;
+  }
+  
+  createParticles() {
+    // Partículas de polen/polvo
+    const particleCount = 500;
+    const particles = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      positions[i] = (Math.random() - 0.5) * 200;
+      positions[i + 1] = Math.random() * 50;
+      positions[i + 2] = (Math.random() - 0.5) * 200;
       
-      // Animaciones
-      animateBirds();
-      animateWater();
-      animateDayNight();
-      
-      // Renderizar
-      renderer.render(scene, camera);
+      colors[i] = 1;
+      colors[i + 1] = 1;
+      colors[i + 2] = 0.8 + Math.random() * 0.2;
     }
     
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     
-    // Iniciar la aplicación
-    init();
+    const particleMaterial = new THREE.PointsMaterial({
+      size: 0.5,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending
+    });
+    
+    this.particleSystem = new THREE.Points(particles, particleMaterial);
+    this.scene.add(this.particleSystem);
+  }
+  
+  setupControls() {
+    this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.05;
+    this.controls.minDistance = 10;
+    this.controls.maxDistance = 300;
+    this.controls.maxPolarAngle = Math.PI * 0.45;
+    this.controls.target.set(0, 0, 0);
+    this.controls.autoRotate = this.settings.autoRotate;
+    this.controls.autoRotateSpeed = 0.5;
+  }
+  
+  setupEventListeners() {
+    // Resize
+    window.addEventListener('resize', () => this.onResize());
+    
+    // Mouse para interacciones
+    window.addEventListener('mousemove', (e) => this.onMouseMove(e));
+    window.addEventListener('click', (e) => this.onMouseClick(e));
+    
+    // Controles UI
+    this.setupUIControls();
+  }
+  
+  setupUIControls() {
+    // Vistas
+    document.getElementById('viewNormal').addEventListener('click', () => {
+      this.animateCamera({ x: 80, y: 45, z: 80 }, { x: 0, y: 0, z: 0 });
+    });
+    
+    document.getElementById('viewAerial').addEventListener('click', () => {
+      this.animateCamera({ x: 0, y: 150, z: 1 }, { x: 0, y: 0, z: 0 });
+    });
+    
+    document.getElementById('viewWater').addEventListener('click', () => {
+      this.animateCamera({ x: 20, y: 5, z: 20 }, { x: 0, y: 0, z: 0 });
+    });
+    
+    document.getElementById('viewBird').addEventListener('click', () => {
+      if (this.birds.length > 0) {
+        this.followBird = true;
+        this.currentBirdIndex = 0;
+      }
+    });
+    
+    document.getElementById('viewCinematic').addEventListener('click', () => {
+      this.startCinematicCamera();
+    });
+    
+    document.getElementById('viewFirst').addEventListener('click', () => {
+      this.animateCamera({ x: 40, y: 2, z: 40 }, { x: 0, y: 2, z: 0 });
+    });
+    
+    // Ambiente
+    document.getElementById('toggleWeather').addEventListener('click', () => {
+      this.toggleWeather();
+    });
+    
+    document.getElementById('toggleFog').addEventListener('click', () => {
+      this.toggleFog();
+    });
+    
+    document.getElementById('toggleWind').addEventListener('click', () => {
+      this.settings.wind = !this.settings.wind;
+    });
+    
+    // Tiempo
+    const timeSlider = document.getElementById('timeSlider');
+    const timeDisplay = document.getElementById('timeDisplay');
+    
+    timeSlider.addEventListener('input', (e) => {
+      this.settings.timeOfDay = parseFloat(e.target.value);
+      const hours = Math.floor(this.settings.timeOfDay);
+      const minutes = Math.floor((this.settings.timeOfDay - hours) * 60);
+      timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      this.updateSun();
+    });
+    
+    // Controles generales
+    document.getElementById('toggleSound').addEventListener('click', () => {
+      this.settings.sound = !this.settings.sound;
+      // Aquí se activarían los sonidos reales
+    });
+    
+    document.getElementById('toggleInfo').addEventListener('click', () => {
+      const panel = document.getElementById('infoPanel');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    document.getElementById('toggleSpecies').addEventListener('click', () => {
+      const panel = document.getElementById('speciesPanel');
+      panel.classList.toggle('active');
+    });
+    
+    document.getElementById('quality').addEventListener('click', () => {
+      this.toggleQuality();
+    });
+    
+    document.getElementById('fullscreen').addEventListener('click', () => {
+      this.toggleFullscreen();
+    });
+    
+    document.getElementById('reset').addEventListener('click', () => {
+      this.resetScene();
+    });
+    
+    // Especies
+    document.querySelectorAll('.species-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const species = e.currentTarget.dataset.species;
+        this.focusOnSpecies(species);
+      });
+    });
+  }
+  
+  animateCamera(position, target) {
+    this.followBird = false;
+    
+    const startPos = this.camera.position.clone();
+    const startTarget = this.controls.target.clone();
+    
+    const duration = 2000;
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = this.easeInOutCubic(progress);
+      
+      this.camera.position.lerpVectors(startPos, new THREE.Vector3(position.x, position.y, position.z), eased);
+      this.controls.target.lerpVectors(startTarget, new THREE.Vector3(target.x, target.y, target.z), eased);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
     animate();
-  </script>
+  }
+  
+  easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+  
+  startCinematicCamera() {
+    this.cinematicMode = true;
+    this.controls.autoRotate = true;
+    this.controls.autoRotateSpeed = 1;
+  }
+  
+  toggleWeather() {
+    const weathers = ['clear', 'cloudy', 'rainy'];
+    const currentIndex = weathers.indexOf(this.settings.weather);
+    this.settings.weather = weathers[(currentIndex + 1) % weathers.length];
+    
+    switch(this.settings.weather) {
+      case 'cloudy':
+        this.scene.fog = new THREE.FogExp2(0x9099a0, 0.005);
+        this.sun.intensity = 0.5;
+        break;
+      case 'rainy':
+        this.scene.fog = new THREE.FogExp2(0x606060, 0.008);
+        this.sun.intensity = 0.3;
+        this.createRain();
+        break;
+      default:
+        this.scene.fog = new THREE.FogExp2(0x87CEEB, 0.002);
+        this.sun.intensity = 1;
+        this.removeRain();
+    }
+  }
+  
+  toggleFog() {
+    this.settings.fog = !this.settings.fog;
+    if (this.settings.fog) {
+      this.scene.fog = new THREE.FogExp2(0xcccccc, 0.01);
+    } else {
+      this.scene.fog = new THREE.FogExp2(0x87CEEB, 0.002);
+    }
+  }
+  
+  toggleQuality() {
+    this.settings.quality = this.settings.quality === 'high' ? 'low' : 'high';
+    
+    if (this.settings.quality === 'high') {
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.shadowMap.enabled = true;
+    } else {
+      this.renderer.setPixelRatio(1);
+      this.renderer.shadowMap.enabled = false;
+    }
+  }
+  
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  }
+  
+  resetScene() {
+    this.camera.position.set(80, 45, 80);
+    this.controls.target.set(0, 0, 0);
+    this.controls.autoRotate = false;
+    this.followBird = false;
+    this.cinematicMode = false;
+    this.settings.timeOfDay = 12;
+    this.settings.weather = 'clear';
+    this.settings.fog = false;
+    this.settings.wind = false;
+    this.updateSun();
+    this.toggleWeather();
+    document.getElementById('timeSlider').value = 12;
+    document.getElementById('timeDisplay').textContent = '12:00';
+  }
+  
+  focusOnSpecies(species) {
+    const bird = this.birds.find(b => b.type === species);
+    if (bird) {
+      const pos = bird.mesh.position;
+      this.animateCamera(
+        { x: pos.x + 10, y: pos.y + 5, z: pos.z + 10 },
+        { x: pos.x, y: pos.y, z: pos.z }
+      );
+    }
+  }
+  
+  createRain() {
+    // Sistema de partículas para lluvia
+    if (this.rain) return;
+    
+    const rainGeometry = new THREE.BufferGeometry();
+    const rainCount = 1000;
+    const positions = new Float32Array(rainCount * 3);
+    
+    for (let i = 0; i < rainCount * 3; i += 3) {
+      positions[i] = (Math.random() - 0.5) * 200;
+      positions[i + 1] = Math.random() * 100;
+      positions[i + 2] = (Math.random() - 0.5) * 200;
+    }
+    
+    rainGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const rainMaterial = new THREE.PointsMaterial({
+      color: 0xaaaaaa,
+      size: 0.3,
+      transparent: true,
+      opacity: 0.6
+    });
+    
+    this.rain = new THREE.Points(rainGeometry, rainMaterial);
+    this.scene.add(this.rain);
+  }
+  
+  removeRain() {
+    if (this.rain) {
+      this.scene.remove(this.rain);
+      this.rain = null;
+    }
+  }
+  
+  onMouseMove(event) {
+    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  }
+  
+  onMouseClick(event) {
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.birds.map(b => b.mesh));
+    
+    if (intersects.length > 0) {
+      const bird = this.birds.find(b => b.mesh === intersects[0].object.parent);
+      if (bird) {
+        this.showTooltip(`Ave: ${bird.type}`, event.clientX, event.clientY);
+      }
+    }
+  }
+  
+  showTooltip(text, x, y) {
+    const tooltip = document.getElementById('tooltip');
+    tooltip.textContent = text;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+    tooltip.classList.add('visible');
+    
+    setTimeout(() => {
+      tooltip.classList.remove('visible');
+    }, 2000);
+  }
+  
+  onResize() {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  
+  animate() {
+    requestAnimationFrame(() => this.animate());
+    
+    const delta = this.clock.getDelta();
+    const time = this.clock.getElapsedTime();
+    
+    // Animar agua
+    if (this.water) {
+      this.water.material.uniforms['time'].value += delta;
+    }
+    
+    // Animar cascada
+    if (this.waterfallPoints) {
+      const positions = this.waterfallPoints.geometry.attributes.position.array;
+      for (let i = 1; i < positions.length; i += 3) {
+        positions[i] -= 0.3;
+        if (positions[i] < 0) {
+          positions[i] = 8;
+        }
+      }
+      this.waterfallPoints.geometry.attributes.position.needsUpdate = true;
+    }
+    
+    // Animar aves
+    this.animateBirds(time);
+    
+    // Animar vegetación con viento
+    if (this.settings.wind) {
+      this.animateVegetation(time);
+    }
+    
+    // Animar partículas
+    if (this.particleSystem) {
+      this.particleSystem.rotation.y += 0.0001;
+      const positions = this.particleSystem.geometry.attributes.position.array;
+      for (let i = 1; i < positions.length; i += 3) {
+        positions[i] -= 0.1;
+        if (positions[i] < 0) {
+          positions[i] = 50;
+        }
+      }
+      this.particleSystem.geometry.attributes.position.needsUpdate = true;
+    }
+    
+    // Animar lluvia
+    if (this.rain) {
+      const positions = this.rain.geometry.attributes.position.array;
+      for (let i = 1; i < positions.length; i += 3) {
+        positions[i] -= 2;
+        if (positions[i] < 0) {
+          positions[i] = 100;
+        }
+      }
+      this.rain.geometry.attributes.position.needsUpdate = true;
+    }
+    
+    // Seguir ave si está activado
+    if (this.followBird && this.birds.length > 0) {
+      const bird = this.birds[this.currentBirdIndex];
+      this.camera.position.lerp(
+        new THREE.Vector3(
+          bird.mesh.position.x - 10,
+          bird.mesh.position.y + 5,
+          bird.mesh.position.z - 10
+        ),
+        0.05
+      );
+      this.controls.target.lerp(bird.mesh.position, 0.05);
+    }
+    
+    this.controls.update();
+    this.renderer.render(this.scene, this.camera);
+  }
+  
+  animateBirds(time) {
+    this.birds.forEach((bird, index) => {
+      // Movimiento circular con variación
+      bird.angle += bird.speed * 0.01;
+      const baseRadius = bird.radius + Math.sin(time + index) * 5;
+      
+      bird.mesh.position.x = Math.cos(bird.angle) * baseRadius;
+      bird.mesh.position.y = bird.height + Math.sin(time * 2 + bird.verticalPhase) * 3;
+      bird.mesh.position.z = Math.sin(bird.angle) * baseRadius;
+      
+      // Orientación
+      bird.mesh.rotation.y = bird.angle + Math.PI / 2;
+      
+      // Aleteo
+      const wingAngle = Math.sin(time * 10 * bird.speed) * 0.5;
+      bird.wings.left.rotation.y = wingAngle;
+      bird.wings.right.rotation.y = -wingAngle;
+    });
+  }
+  
+  animateVegetation(time) {
+    this.vegetation.forEach((plant, index) => {
+      if (plant.position.y < 5) { // Solo plantas bajas
+        const windEffect = Math.sin(time + index * 0.1) * 0.02;
+        plant.rotation.z = windEffect;
+        plant.rotation.x = windEffect * 0.5;
+      }
+    });
+  }
+}
+
+// Inicializar
+window.addEventListener('DOMContentLoaded', () => {
+  new WetlandEcosystem();
+});
+</script>
+
 </body>
 </html>
