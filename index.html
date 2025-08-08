@@ -1,592 +1,726 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Humedal Santa María del Lago - Experiencia 3D</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-        }
-        
-        #container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-        
-        .ui-panel {
-            position: absolute;
-            background: rgba(0, 20, 40, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            color: white;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            z-index: 100;
-        }
-        
-        .control-panel {
-            top: 20px;
-            left: 20px;
-            width: 280px;
-        }
-        
-        .data-panel {
-            top: 20px;
-            right: 20px;
-            width: 300px;
-            max-height: 80vh;
-            overflow-y: auto;
-            display: none;
-        }
-        
-        .button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-            padding: 12px 20px;
-            margin: 8px 0;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-        }
-        
-        .button.active {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-        
-        .sensor-data {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-            border-left: 4px solid #4CAF50;
-        }
-        
-        .sensor-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #4CAF50;
-        }
-        
-        .sensor-label {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-bottom: 5px;
-        }
-        
-        .info-panel {
-            bottom: 20px;
-            left: 20px;
-            width: 300px;
-        }
-        
-        h1 {
-            color: #4CAF50;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-        
-        h2 {
-            color: #81C784;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 18px;
-            z-index: 200;
-        }
-        
-        .species-counter {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(76, 175, 80, 0.9);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            z-index: 100;
-        }
-
-        .thermal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 30% 40%, rgba(255, 100, 100, 0.3) 0%, transparent 30%),
-                       radial-gradient(circle at 70% 60%, rgba(255, 200, 100, 0.3) 0%, transparent 25%),
-                       radial-gradient(circle at 50% 80%, rgba(100, 255, 100, 0.3) 0%, transparent 20%);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            z-index: 50;
-        }
-
-        .thermal-overlay.active {
-            opacity: 1;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Humedal Santa María del Lago - Experiencia 3D Interactiva</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      background: linear-gradient(180deg, #87CEEB 0%, #98D8E8 50%, #B0E0E6 100%);
+    }
+    
+    #canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease;
+    }
+    
+    .loading-screen h1 {
+      color: white;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .loader {
+      width: 60px;
+      height: 60px;
+      border: 5px solid rgba(255,255,255,0.3);
+      border-top: 5px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .ui-panel {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      z-index: 100;
+    }
+    
+    .control-panel {
+      top: 20px;
+      left: 20px;
+      width: 320px;
+    }
+    
+    .info-panel {
+      bottom: 20px;
+      left: 20px;
+      max-width: 400px;
+    }
+    
+    .stats-panel {
+      top: 20px;
+      right: 20px;
+      width: 280px;
+    }
+    
+    .ui-panel h2 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+      font-size: 1.4rem;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+    
+    .ui-panel h3 {
+      color: #34495e;
+      margin: 15px 0 10px 0;
+      font-size: 1.1rem;
+    }
+    
+    .button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      margin: 8px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .button:active {
+      transform: translateY(0);
+    }
+    
+    .button.active {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    
+    .button-group .button {
+      flex: 1;
+    }
+    
+    .stat-item {
+      background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border-left: 4px solid #00acc1;
+    }
+    
+    .stat-label {
+      color: #546e7a;
+      font-size: 0.9rem;
+      margin-bottom: 5px;
+    }
+    
+    .stat-value {
+      color: #00838f;
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+    
+    .species-counter {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+      z-index: 100;
+    }
+    
+    .help-text {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      z-index: 100;
+    }
+    
+    .help-text kbd {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    
+    @media (max-width: 768px) {
+      .ui-panel {
+        width: calc(100% - 40px) !important;
+        max-width: none;
+      }
+      
+      .control-panel {
+        top: auto;
+        bottom: 20px;
+      }
+      
+      .stats-panel {
+        display: none;
+      }
+      
+      .help-text {
+        display: none;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div id="container">
-        <div class="loading" id="loading">Cargando Humedal Santa María del Lago...</div>
-        
-        <div class="species-counter" id="speciesCounter">
-            🦆 Tinguas detectadas: <span id="tinguaCount">0</span>
-        </div>
-
-        <div class="thermal-overlay" id="thermalOverlay"></div>
-        
-        <div class="ui-panel control-panel">
-            <h1>🌿 Control de Monitoreo</h1>
-            
-            <button class="button" id="satelliteBtn">
-                🛰️ Datos Satelitales
-            </button>
-            
-            <button class="button" id="droneBtn">
-                🚁 Drone Biodiversidad
-            </button>
-            
-            <button class="button" id="thermalBtn">
-                🌡️ Drone Térmico
-            </button>
-            
-            <button class="button" id="sensorsBtn">
-                📊 Sensores Ambientales
-            </button>
-            
-            <button class="button" id="resetBtn">
-                🔄 Vista Normal
-            </button>
-        </div>
-        
-        <div class="ui-panel data-panel" id="dataPanel">
-            <h1>📊 Datos en Tiempo Real</h1>
-            <div id="dataContent"></div>
-        </div>
-        
-        <div class="ui-panel info-panel">
-            <h1>🏞️ Humedal Santa María del Lago</h1>
-            <p>Ecosistema urbano vital de Bogotá</p>
-            <p><strong>Área:</strong> 11.18 hectáreas</p>
-            <p><strong>Altitud:</strong> 2,550 m.s.n.m.</p>
-            <p><strong>Especies:</strong> 120+ registradas</p>
-        </div>
+  <div id="canvas-container"></div>
+  
+  <div class="loading-screen" id="loadingScreen">
+    <h1>🌿 Humedal Santa María del Lago</h1>
+    <div class="loader"></div>
+  </div>
+  
+  <div class="species-counter" id="speciesCounter">
+    🦆 Especies detectadas: <span id="speciesCount">0</span>
+  </div>
+  
+  <div class="ui-panel control-panel">
+    <h2>🎮 Controles de Visualización</h2>
+    
+    <h3>Modos de Vista</h3>
+    <button class="button" id="normalView">
+      <span>👁️</span> Vista Normal
+    </button>
+    <button class="button" id="aerialView">
+      <span>🚁</span> Vista Aérea
+    </button>
+    <button class="button" id="waterView">
+      <span>💧</span> Vista Acuática
+    </button>
+    
+    <h3>Simulaciones</h3>
+    <button class="button" id="dayNightCycle">
+      <span>🌅</span> Ciclo Día/Noche
+    </button>
+    <button class="button" id="weatherSim">
+      <span>🌧️</span> Clima
+    </button>
+    
+    <div class="button-group">
+      <button class="button" id="resetView">
+        <span>🔄</span> Reiniciar
+      </button>
+      <button class="button" id="fullscreen">
+        <span>⛶</span> Pantalla
+      </button>
     </div>
+  </div>
+  
+  <div class="ui-panel info-panel">
+    <h2>📍 Información del Humedal</h2>
+    <p><strong>Ubicación:</strong> Bogotá, Colombia</p>
+    <p><strong>Área:</strong> 11.18 hectáreas</p>
+    <p><strong>Altitud:</strong> 2,550 m.s.n.m.</p>
+    <p><strong>Biodiversidad:</strong> Más de 120 especies registradas</p>
+    <p><strong>Importancia:</strong> Ecosistema vital para la regulación hídrica y refugio de aves migratorias</p>
+  </div>
+  
+  <div class="ui-panel stats-panel">
+    <h2>📊 Estadísticas en Tiempo Real</h2>
+    
+    <div class="stat-item">
+      <div class="stat-label">Temperatura</div>
+      <div class="stat-value" id="tempValue">18°C</div>
+    </div>
+    
+    <div class="stat-item">
+      <div class="stat-label">Calidad del Agua</div>
+      <div class="stat-value" id="waterQuality">Buena</div>
+    </div>
+    
+    <div class="stat-item">
+      <div class="stat-label">Nivel del Agua</div>
+      <div class="stat-value" id="waterLevel">Normal</div>
+    </div>
+  </div>
+  
+  <div class="help-text">
+    <p><kbd>Click + Arrastrar</kbd> Rotar vista</p>
+    <p><kbd>Scroll</kbd> Zoom</p>
+    <p><kbd>Click derecho + Arrastrar</kbd> Mover cámara</p>
+  </div>
 
-    <script>
-        // Variables globales
-        let scene, camera, renderer, controls;
-        let tinguas = [];
-        let tinguaCount = 0;
-        let currentDataMode = null;
-        let animationFrame;
-
-        // Datos simulados de sensores
-        const sensorData = {
-            satellite: {
-                title: "🛰️ Datos Satelitales",
-                data: [
-                    { label: "Cobertura Vegetal", value: "78%", unit: "" },
-                    { label: "Área de Agua", value: "4.2", unit: "hectáreas" },
-                    { label: "Índice de Vegetación", value: "0.72", unit: "NDVI" },
-                    { label: "Cambio Anual", value: "+2.3%", unit: "" }
-                ]
-            },
-            drone: {
-                title: "🚁 Detección de Biodiversidad",
-                data: [
-                    { label: "Aves Detectadas", value: "23", unit: "especies" },
-                    { label: "Tinguas Azules", value: "8", unit: "individuos" },
-                    { label: "Patos Zambullidores", value: "12", unit: "individuos" },
-                    { label: "Vegetación Acuática", value: "85%", unit: "cobertura" }
-                ]
-            },
-            thermal: {
-                title: "🌡️ Detección Térmica",
-                data: [
-                    { label: "Fauna Nocturna", value: "15", unit: "detecciones" },
-                    { label: "Temp. Superficie", value: "18.5°C", unit: "" },
-                    { label: "Zonas Calientes", value: "3", unit: "áreas" },
-                    { label: "Actividad Animal", value: "Alta", unit: "" }
-                ]
-            },
-            sensors: {
-                title: "📊 Sensores Ambientales",
-                data: [
-                    { label: "Humedad Relativa", value: "82%", unit: "" },
-                    { label: "pH del Agua", value: "7.2", unit: "" },
-                    { label: "Temperatura", value: "16.8°C", unit: "" },
-                    { label: "Oxígeno Disuelto", value: "8.4", unit: "mg/L" }
-                ]
-            }
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // Variables globales
+    let scene, camera, renderer;
+    let water, ground;
+    let birds = [];
+    let animationId;
+    let clock = new THREE.Clock();
+    let isDayNightActive = false;
+    let isWeatherActive = false;
+    let currentView = 'normal';
+    
+    // Inicialización
+    function init() {
+      // Escena
+      scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0x87CEEB, 50, 500);
+      
+      // Cámara
+      camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(50, 30, 50);
+      camera.lookAt(0, 0, 0);
+      
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.setClearColor(0x87CEEB, 1);
+      document.getElementById('canvas-container').appendChild(renderer.domElement);
+      
+      // Controles de órbita simples
+      setupOrbitControls();
+      
+      // Luces
+      setupLights();
+      
+      // Crear el humedal
+      createWetland();
+      
+      // Crear vegetación
+      createVegetation();
+      
+      // Crear aves
+      createBirds();
+      
+      // Setup UI
+      setupUI();
+      
+      // Ocultar pantalla de carga
+      setTimeout(() => {
+        const loadingScreen = document.getElementById('loadingScreen');
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+          loadingScreen.style.display = 'none';
+        }, 500);
+      }, 1500);
+      
+      // Event listeners
+      window.addEventListener('resize', onWindowResize);
+    }
+    
+    function setupLights() {
+      // Luz ambiental
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      
+      // Luz direccional (sol)
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(50, 100, 50);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.camera.left = -100;
+      directionalLight.shadow.camera.right = 100;
+      directionalLight.shadow.camera.top = 100;
+      directionalLight.shadow.camera.bottom = -100;
+      directionalLight.shadow.mapSize.width = 2048;
+      directionalLight.shadow.mapSize.height = 2048;
+      scene.add(directionalLight);
+      
+      // Luz hemisférica
+      const hemisphereLight = new THREE.HemisphereLight(0x87CEEB, 0x545454, 0.4);
+      scene.add(hemisphereLight);
+    }
+    
+    function createWetland() {
+      // Terreno base
+      const groundGeometry = new THREE.PlaneGeometry(200, 200, 32, 32);
+      const groundMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0x3a5f3a,
+        side: THREE.DoubleSide
+      });
+      
+      // Añadir algo de variación al terreno
+      const vertices = groundGeometry.attributes.position.array;
+      for (let i = 0; i < vertices.length; i += 3) {
+        vertices[i + 2] = Math.random() * 2 - 1;
+      }
+      groundGeometry.computeVertexNormals();
+      
+      ground = new THREE.Mesh(groundGeometry, groundMaterial);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+      
+      // Lago central
+      const lakeGeometry = new THREE.CircleGeometry(30, 64);
+      const lakeMaterial = new THREE.MeshPhongMaterial({
+        color: 0x006994,
+        shininess: 100,
+        reflectivity: 0.8,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      water = new THREE.Mesh(lakeGeometry, lakeMaterial);
+      water.rotation.x = -Math.PI / 2;
+      water.position.y = 0.1;
+      water.receiveShadow = true;
+      scene.add(water);
+      
+      // Islas pequeñas
+      for (let i = 0; i < 3; i++) {
+        const islandGeometry = new THREE.ConeGeometry(5, 2, 8);
+        const islandMaterial = new THREE.MeshLambertMaterial({ color: 0x4a5f4a });
+        const island = new THREE.Mesh(islandGeometry, islandMaterial);
+        
+        const angle = (i / 3) * Math.PI * 2;
+        island.position.x = Math.cos(angle) * 15;
+        island.position.z = Math.sin(angle) * 15;
+        island.position.y = 1;
+        island.castShadow = true;
+        island.receiveShadow = true;
+        scene.add(island);
+      }
+    }
+    
+    function createVegetation() {
+      // Árboles
+      const treeGeometry = new THREE.ConeGeometry(3, 10, 8);
+      const treeMaterial = new THREE.MeshLambertMaterial({ color: 0x0d5f0d });
+      const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.7, 3);
+      const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+      
+      for (let i = 0; i < 25; i++) {
+        const tree = new THREE.Group();
+        
+        const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+        trunk.position.y = 1.5;
+        tree.add(trunk);
+        
+        const foliage = new THREE.Mesh(treeGeometry, treeMaterial);
+        foliage.position.y = 6;
+        tree.add(foliage);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 40 + Math.random() * 40;
+        tree.position.x = Math.cos(angle) * radius;
+        tree.position.z = Math.sin(angle) * radius;
+        
+        tree.scale.set(
+          0.8 + Math.random() * 0.4,
+          0.8 + Math.random() * 0.4,
+          0.8 + Math.random() * 0.4
+        );
+        
+        tree.castShadow = true;
+        tree.receiveShadow = true;
+        scene.add(tree);
+      }
+      
+      // Arbustos
+      const bushGeometry = new THREE.SphereGeometry(2, 8, 6);
+      const bushMaterial = new THREE.MeshLambertMaterial({ color: 0x2d5f2d });
+      
+      for (let i = 0; i < 40; i++) {
+        const bush = new THREE.Mesh(bushGeometry, bushMaterial);
+        
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 20 + Math.random() * 60;
+        bush.position.x = Math.cos(angle) * radius;
+        bush.position.z = Math.sin(angle) * radius;
+        bush.position.y = 1;
+        
+        bush.scale.set(
+          0.5 + Math.random() * 0.5,
+          0.3 + Math.random() * 0.3,
+          0.5 + Math.random() * 0.5
+        );
+        
+        bush.castShadow = true;
+        bush.receiveShadow = true;
+        scene.add(bush);
+      }
+    }
+    
+    function createBirds() {
+      const birdGeometry = new THREE.ConeGeometry(0.5, 2, 4);
+      const birdMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+      
+      for (let i = 0; i < 10; i++) {
+        const bird = new THREE.Mesh(birdGeometry, birdMaterial);
+        bird.rotation.x = Math.PI / 2;
+        
+        bird.userData = {
+          angle: Math.random() * Math.PI * 2,
+          radius: 20 + Math.random() * 30,
+          speed: 0.5 + Math.random() * 0.5,
+          heightOffset: Math.random() * 10
         };
-
-        // Inicialización
-        function init() {
-            // Crear escena
-            scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x87CEEB, 50, 200);
-            
-            // Configurar cámara
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(30, 25, 30);
-            
-            // Configurar renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.setClearColor(0x87CEEB, 1);
-            document.getElementById('container').appendChild(renderer.domElement);
-            
-            // Controles de cámara básicos
-            setupCameraControls();
-            
-            // Crear el humedal
-            createWetland();
-            
-            // Crear lighting
-            setupLighting();
-            
-            // Crear tinguas
-            createTinguas();
-            
-            // Setup UI
-            setupUI();
-            
-            // Iniciar animación
-            animate();
-            
-            // Ocultar loading
-            document.getElementById('loading').style.display = 'none';
+        
+        bird.castShadow = true;
+        birds.push(bird);
+        scene.add(bird);
+      }
+      
+      updateSpeciesCount();
+    }
+    
+    function updateSpeciesCount() {
+      document.getElementById('speciesCount').textContent = birds.length;
+    }
+    
+    function setupOrbitControls() {
+      let mouseX = 0, mouseY = 0;
+      let targetX = 0, targetY = 0;
+      let isMouseDown = false;
+      let zoom = 1;
+      
+      renderer.domElement.addEventListener('mousedown', (e) => {
+        isMouseDown = true;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+      
+      renderer.domElement.addEventListener('mouseup', () => {
+        isMouseDown = false;
+      });
+      
+      renderer.domElement.addEventListener('mousemove', (e) => {
+        if (isMouseDown) {
+          targetX += (e.clientX - mouseX) * 0.5;
+          targetY += (e.clientY - mouseY) * 0.5;
+          mouseX = e.clientX;
+          mouseY = e.clientY;
         }
-
-        function setupCameraControls() {
-            let mouseX = 0, mouseY = 0;
-            let targetX = 0, targetY = 0;
-            
-            document.addEventListener('mousemove', (event) => {
-                mouseX = (event.clientX - window.innerWidth / 2) * 0.0001;
-                mouseY = (event.clientY - window.innerHeight / 2) * 0.0001;
-            });
-            
-            function updateCamera() {
-                targetX += (mouseX - targetX) * 0.02;
-                targetY += (mouseY - targetY) * 0.02;
-                
-                camera.position.x = Math.cos(Date.now() * 0.0005 + targetX * 5) * 40;
-                camera.position.z = Math.sin(Date.now() * 0.0005 + targetX * 5) * 40;
-                camera.position.y = 25 + targetY * 10;
-                
-                camera.lookAt(0, 0, 0);
-                
-                requestAnimationFrame(updateCamera);
-            }
-            updateCamera();
+      });
+      
+      renderer.domElement.addEventListener('wheel', (e) => {
+        zoom += e.deltaY * 0.001;
+        zoom = Math.max(0.5, Math.min(2, zoom));
+      });
+      
+      // Update camera en animate()
+      window.updateCamera = function() {
+        const radius = 70 * zoom;
+        camera.position.x = Math.cos(targetX * 0.01) * radius;
+        camera.position.z = Math.sin(targetX * 0.01) * radius;
+        camera.position.y = 30 + targetY * 0.1;
+        camera.lookAt(0, 0, 0);
+      };
+    }
+    
+    function setupUI() {
+      // Vista normal
+      document.getElementById('normalView').addEventListener('click', () => {
+        currentView = 'normal';
+        camera.position.set(50, 30, 50);
+        camera.lookAt(0, 0, 0);
+        updateActiveButton('normalView');
+      });
+      
+      // Vista aérea
+      document.getElementById('aerialView').addEventListener('click', () => {
+        currentView = 'aerial';
+        camera.position.set(0, 100, 0);
+        camera.lookAt(0, 0, 0);
+        updateActiveButton('aerialView');
+      });
+      
+      // Vista acuática
+      document.getElementById('waterView').addEventListener('click', () => {
+        currentView = 'water';
+        camera.position.set(0, 2, 30);
+        camera.lookAt(0, 5, 0);
+        updateActiveButton('waterView');
+      });
+      
+      // Ciclo día/noche
+      document.getElementById('dayNightCycle').addEventListener('click', () => {
+        isDayNightActive = !isDayNightActive;
+        document.getElementById('dayNightCycle').classList.toggle('active');
+      });
+      
+      // Simulación de clima
+      document.getElementById('weatherSim').addEventListener('click', () => {
+        isWeatherActive = !isWeatherActive;
+        document.getElementById('weatherSim').classList.toggle('active');
+        
+        if (isWeatherActive) {
+          scene.fog = new THREE.Fog(0x808080, 10, 200);
+          renderer.setClearColor(0x808080, 1);
+        } else {
+          scene.fog = new THREE.Fog(0x87CEEB, 50, 500);
+          renderer.setClearColor(0x87CEEB, 1);
         }
-
-        function createWetland() {
-            // Crear el lago principal
-            const lakeGeometry = new THREE.CircleGeometry(20, 32);
-            const lakeMaterial = new THREE.MeshPhongMaterial({
-                color: 0x4169E1,
-                transparent: true,
-                opacity: 0.8,
-                shininess: 100
-            });
-            const lake = new THREE.Mesh(lakeGeometry, lakeMaterial);
-            lake.rotation.x = -Math.PI / 2;
-            lake.position.y = 0.1;
-            lake.receiveShadow = true;
-            scene.add(lake);
-
-            // Crear vegetación alrededor del lago
-            createVegetation();
-            
-            // Crear senderos
-            createPaths();
-            
-            // Crear pequeñas islas
-            createIslands();
-        }
-
-        function createVegetation() {
-            // Juncos y vegetación acuática
-            for (let i = 0; i < 150; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 18 + Math.random() * 15;
-                const x = Math.cos(angle) * distance;
-                const z = Math.sin(angle) * distance;
-                
-                // Juncos
-                const reedGeometry = new THREE.CylinderGeometry(0.1, 0.15, 2 + Math.random() * 3, 8);
-                const reedMaterial = new THREE.MeshLambertMaterial({ color: 0x228B22 });
-                const reed = new THREE.Mesh(reedGeometry, reedMaterial);
-                reed.position.set(x, 1, z);
-                reed.castShadow = true;
-                scene.add(reed);
-            }
-
-            // Árboles más grandes
-            for (let i = 0; i < 30; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 25 + Math.random() * 10;
-                const x = Math.cos(angle) * distance;
-                const z = Math.sin(angle) * distance;
-                
-                // Tronco
-                const trunkGeometry = new THREE.CylinderGeometry(0.5, 0.8, 6, 8);
-                const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-                const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-                trunk.position.set(x, 3, z);
-                trunk.castShadow = true;
-                scene.add(trunk);
-                
-                // Copa del árbol
-                const crownGeometry = new THREE.SphereGeometry(3, 16, 16);
-                const crownMaterial = new THREE.MeshLambertMaterial({ color: 0x32CD32 });
-                const crown = new THREE.Mesh(crownGeometry, crownMaterial);
-                crown.position.set(x, 7, z);
-                crown.castShadow = true;
-                scene.add(crown);
-            }
-        }
-
-        function createPaths() {
-            // Sendero principal
-            const pathGeometry = new THREE.PlaneGeometry(3, 80);
-            const pathMaterial = new THREE.MeshLambertMaterial({ color: 0xD2B48C });
-            const path = new THREE.Mesh(pathGeometry, pathMaterial);
-            path.rotation.x = -Math.PI / 2;
-            path.position.y = 0.05;
-            path.receiveShadow = true;
-            scene.add(path);
-        }
-
-        function createIslands() {
-            for (let i = 0; i < 3; i++) {
-                const angle = (i / 3) * Math.PI * 2;
-                const distance = 8 + Math.random() * 5;
-                const x = Math.cos(angle) * distance;
-                const z = Math.sin(angle) * distance;
-                
-                const islandGeometry = new THREE.CircleGeometry(2, 16);
-                const islandMaterial = new THREE.MeshLambertMaterial({ color: 0x8FBC8F });
-                const island = new THREE.Mesh(islandGeometry, islandMaterial);
-                island.rotation.x = -Math.PI / 2;
-                island.position.set(x, 0.2, z);
-                scene.add(island);
-            }
-        }
-
-        function setupLighting() {
-            // Luz ambiental
-            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-            scene.add(ambientLight);
-            
-            // Luz direccional (sol)
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(50, 50, 50);
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
-            scene.add(directionalLight);
-        }
-
-        function createTinguas() {
-            for (let i = 0; i < 8; i++) {
-                const tingua = createTingua();
-                tinguas.push(tingua);
-                scene.add(tingua.group);
-            }
-            updateTinguaCounter();
-        }
-
-        function createTingua() {
-            const group = new THREE.Group();
-            
-            // Cuerpo de la tingua
-            const bodyGeometry = new THREE.SphereGeometry(0.8, 16, 16);
-            const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x2F4F4F });
-            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-            body.scale.set(1, 0.8, 1.2);
-            body.castShadow = true;
-            group.add(body);
-            
-            // Cabeza
-            const headGeometry = new THREE.SphereGeometry(0.4, 16, 16);
-            const headMaterial = new THREE.MeshPhongMaterial({ color: 0x000080 });
-            const head = new THREE.Mesh(headGeometry, headMaterial);
-            head.position.set(0, 0.5, 0.8);
-            head.castShadow = true;
-            group.add(head);
-            
-            // Pico
-            const beakGeometry = new THREE.ConeGeometry(0.1, 0.4, 8);
-            const beakMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFF00 });
-            const beak = new THREE.Mesh(beakGeometry, beakMaterial);
-            beak.position.set(0, 0.5, 1.1);
-            beak.rotation.x = Math.PI / 2;
-            group.add(beak);
-            
-            // Posición inicial aleatoria
-            const angle = Math.random() * Math.PI * 2;
-            const distance = 5 + Math.random() * 10;
-            group.position.set(
-                Math.cos(angle) * distance,
-                0.5,
-                Math.sin(angle) * distance
-            );
-            
-            return {
-                group: group,
-                speed: 0.01 + Math.random() * 0.02,
-                direction: Math.random() * Math.PI * 2,
-                changeTimer: 0
-            };
-        }
-
-        function animateTinguas() {
-            tinguas.forEach(tingua => {
-                // Cambiar dirección ocasionalmente
-                tingua.changeTimer += 1;
-                if (tingua.changeTimer > 200 + Math.random() * 200) {
-                    tingua.direction += (Math.random() - 0.5) * 0.5;
-                    tingua.changeTimer = 0;
-                }
-                
-                // Mover tingua
-                const newX = tingua.group.position.x + Math.cos(tingua.direction) * tingua.speed;
-                const newZ = tingua.group.position.z + Math.sin(tingua.direction) * tingua.speed;
-                
-                // Mantener dentro del área del lago
-                const distanceFromCenter = Math.sqrt(newX * newX + newZ * newZ);
-                if (distanceFromCenter < 18) {
-                    tingua.group.position.x = newX;
-                    tingua.group.position.z = newZ;
-                    
-                    // Rotar hacia la dirección de movimiento
-                    tingua.group.rotation.y = tingua.direction;
-                } else {
-                    // Cambiar dirección si está fuera del límite
-                    tingua.direction += Math.PI;
-                }
-                
-                // Animación de natación
-                tingua.group.position.y = 0.5 + Math.sin(Date.now() * 0.005 + tingua.group.position.x) * 0.1;
-            });
-        }
-
-        function updateTinguaCounter() {
-            document.getElementById('tinguaCount').textContent = tinguas.length;
-        }
-
-        function setupUI() {
-            // Botones de control
-            document.getElementById('satelliteBtn').addEventListener('click', () => showData('satellite'));
-            document.getElementById('droneBtn').addEventListener('click', () => showData('drone'));
-            document.getElementById('thermalBtn').addEventListener('click', () => showData('thermal'));
-            document.getElementById('sensorsBtn').addEventListener('click', () => showData('sensors'));
-            document.getElementById('resetBtn').addEventListener('click', hideData);
-        }
-
-        function showData(type) {
-            // Actualizar estado de botones
-            document.querySelectorAll('.button').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(type + 'Btn').classList.add('active');
-            
-            currentDataMode = type;
-            
-            // Mostrar panel de datos
-            const dataPanel = document.getElementById('dataPanel');
-            const dataContent = document.getElementById('dataContent');
-            
-            dataContent.innerHTML = `
-                <h2>${sensorData[type].title}</h2>
-                ${sensorData[type].data.map(item => `
-                    <div class="sensor-data">
-                        <div class="sensor-label">${item.label}</div>
-                        <div class="sensor-value">${item.value} ${item.unit}</div>
-                    </div>
-                `).join('')}
-            `;
-            
-            dataPanel.style.display = 'block';
-            
-            // Efectos especiales según el tipo
-            if (type === 'thermal') {
-                document.getElementById('thermalOverlay').classList.add('active');
-            } else {
-                document.getElementById('thermalOverlay').classList.remove('active');
-            }
-        }
-
-        function hideData() {
-            document.querySelectorAll('.button').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('dataPanel').style.display = 'none';
-            document.getElementById('thermalOverlay').classList.remove('active');
-            currentDataMode = null;
-        }
-
-        function animate() {
-            animationFrame = requestAnimationFrame(animate);
-            
-            // Animar tinguas
-            animateTinguas();
-            
-            // Simular ondas en el agua
-            scene.children.forEach(child => {
-                if (child.material && child.material.color && child.material.color.getHex() === 0x4169E1) {
-                    child.position.y = 0.1 + Math.sin(Date.now() * 0.002) * 0.05;
-                }
-            });
-            
-            // Renderizar
-            renderer.render(scene, camera);
-        }
-
-        // Manejar redimensionamiento
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+      
+      // Reiniciar vista
+      document.getElementById('resetView').addEventListener('click', () => {
+        camera.position.set(50, 30, 50);
+        camera.lookAt(0, 0, 0);
+        isDayNightActive = false;
+        isWeatherActive = false;
+        currentView = 'normal';
+        document.querySelectorAll('.button.active').forEach(btn => {
+          btn.classList.remove('active');
         });
-
-        // Iniciar aplicación
-        init();
-    </script>
+        scene.fog = new THREE.Fog(0x87CEEB, 50, 500);
+        renderer.setClearColor(0x87CEEB, 1);
+      });
+      
+      // Pantalla completa
+      document.getElementById('fullscreen').addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+        } else {
+          document.exitFullscreen();
+        }
+      });
+      
+      // Actualizar estadísticas simuladas
+      setInterval(() => {
+        document.getElementById('tempValue').textContent = 
+          (15 + Math.random() * 8).toFixed(1) + '°C';
+        
+        const waterQualities = ['Excelente', 'Buena', 'Normal'];
+        document.getElementById('waterQuality').textContent = 
+          waterQualities[Math.floor(Math.random() * waterQualities.length)];
+        
+        const waterLevels = ['Alto', 'Normal', 'Medio'];
+        document.getElementById('waterLevel').textContent = 
+          waterLevels[Math.floor(Math.random() * waterLevels.length)];
+      }, 5000);
+    }
+    
+    function updateActiveButton(buttonId) {
+      document.querySelectorAll('.button').forEach(btn => {
+        if (btn.id === 'normalView' || btn.id === 'aerialView' || btn.id === 'waterView') {
+          btn.classList.remove('active');
+        }
+      });
+      document.getElementById(buttonId).classList.add('active');
+    }
+    
+    function animateBirds() {
+      birds.forEach(bird => {
+        bird.userData.angle += bird.userData.speed * 0.01;
+        
+        bird.position.x = Math.cos(bird.userData.angle) * bird.userData.radius;
+        bird.position.z = Math.sin(bird.userData.angle) * bird.userData.radius;
+        bird.position.y = 15 + Math.sin(clock.getElapsedTime() * 2) * 2 + bird.userData.heightOffset;
+        
+        bird.rotation.y = bird.userData.angle + Math.PI / 2;
+      });
+    }
+    
+    function animateWater() {
+      if (water) {
+        water.position.y = 0.1 + Math.sin(clock.getElapsedTime()) * 0.05;
+      }
+    }
+    
+    function animateDayNight() {
+      if (isDayNightActive) {
+        const time = clock.getElapsedTime() * 0.1;
+        const intensity = (Math.sin(time) + 1) * 0.5;
+        
+        scene.children.forEach(child => {
+          if (child.type === 'DirectionalLight') {
+            child.intensity = 0.2 + intensity * 0.8;
+          }
+          if (child.type === 'AmbientLight') {
+            child.intensity = 0.3 + intensity * 0.4;
+          }
+        });
+        
+        const skyColor = new THREE.Color().setHSL(0.6, 0.5, 0.2 + intensity * 0.6);
+        renderer.setClearColor(skyColor, 1);
+        scene.fog.color = skyColor;
+      }
+    }
+    
+    function animate() {
+      animationId = requestAnimationFrame(animate);
+      
+      // Actualizar controles de cámara
+      if (window.updateCamera) {
+        window.updateCamera();
+      }
+      
+      // Animaciones
+      animateBirds();
+      animateWater();
+      animateDayNight();
+      
+      // Renderizar
+      renderer.render(scene, camera);
+    }
+    
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    // Iniciar la aplicación
+    init();
+    animate();
+  </script>
 </body>
 </html>
